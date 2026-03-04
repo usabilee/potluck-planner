@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Potluck Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fdf6ec;--card:#fff9f2;--orange:#e8622a;--green:#3d7a5a;
+  --green-light:#e8f4ee;--ink:#2c2018;--muted:#8c7a6b;
+  --border:#e8ddd0;--shadow:0 4px 24px rgba(44,32,24,0.08);
+  --red:#c0392b;--red-light:#fdf0ef;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+
+/* BANNER */
+.banner{background:var(--orange);padding:20px 0 52px;position:relative;text-align:center;overflow:hidden;}
+.banner::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:52px;background:var(--bg);clip-path:ellipse(55% 100% at 50% 100%);}
+.banner-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.banner-emoji{font-size:2.8rem;animation:bob 3s ease-in-out infinite;}
+.banner h1{font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,3rem);font-weight:700;color:#fff;}
+.banner p{font-size:0.95rem;color:rgba(255,255,255,0.82);}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+.main{max-width:760px;margin:0 auto;padding:0 20px 80px;}
+
+/* VIEWS */
+.view{display:none;animation:fadeIn 0.35s ease;}
+.view.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARD */
+.card{background:var(--card);border:1.5px solid var(--border);border-radius:20px;padding:32px 36px;box-shadow:var(--shadow);margin-bottom:20px;}
+@media(max-width:560px){.card{padding:22px 18px;}}
+.card-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;margin-bottom:6px;}
+.card-sub{font-size:0.85rem;color:var(--muted);margin-bottom:24px;}
+
+/* FORM */
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+.field label{font-size:0.72rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted);}
+.field input,.field textarea{
+  background:#fff;border:1.5px solid var(--border);border-radius:10px;
+  padding:12px 14px;font-family:'Nunito',sans-serif;font-size:0.95rem;
+  color:var(--ink);outline:none;width:100%;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+.field input:focus,.field textarea:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(232,98,42,0.1);}
+.field textarea{resize:vertical;min-height:80px;}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:480px){.row-2{grid-template-columns:1fr;}}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 28px;border-radius:50px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.92rem;cursor:pointer;border:none;transition:transform 0.15s,background 0.2s,opacity 0.2s;}
+.btn:active{transform:scale(0.97);}
+.btn:disabled{opacity:0.6;cursor:not-allowed;}
+.btn-primary{background:var(--orange);color:#fff;box-shadow:0 4px 16px rgba(232,98,42,0.3);}
+.btn-primary:hover:not(:disabled){background:#d4531f;}
+.btn-green{background:var(--green);color:#fff;}
+.btn-green:hover:not(:disabled){background:#2f5f44;}
+.btn-sm{padding:9px 18px;font-size:0.82rem;}
+
+/* SHARE BOX */
+.share-box{background:var(--green-light);border:1.5px solid #b6dfc9;border-radius:14px;padding:16px 20px;margin-top:22px;}
+.share-label{font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--green);margin-bottom:10px;}
+.share-row{display:flex;gap:8px;align-items:center;}
+.share-url{flex:1;background:#fff;border:1.5px solid #b6dfc9;border-radius:8px;padding:9px 12px;font-size:0.78rem;color:var(--muted);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:all;cursor:text;}
+
+/* EVENT HEADER */
+.event-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.event-title{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;line-height:1.2;}
+.event-desc{font-size:0.88rem;color:var(--muted);margin-top:8px;line-height:1.55;}
+.badge{background:var(--green-light);color:var(--green);font-size:0.7rem;font-weight:700;padding:4px 12px;border-radius:50px;white-space:nowrap;margin-top:4px;}
+
+/* ITEMS */
+.section-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin:8px 0 14px;display:flex;align-items:center;gap:8px;}
+.items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:20px;}
+.item-card{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:18px 20px;position:relative;transition:box-shadow 0.2s,transform 0.2s;animation:popIn 0.25s ease;}
+.item-card:hover{box-shadow:var(--shadow);transform:translateY(-2px);}
+.item-emoji{font-size:1.8rem;margin-bottom:8px;}
+.item-name{font-weight:700;font-size:0.95rem;margin-bottom:4px;}
+.item-who{font-size:0.78rem;color:var(--muted);}
+.item-note{font-size:0.8rem;color:var(--muted);margin-top:6px;font-style:italic;line-height:1.4;}
+.del-btn{position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;font-size:0.85rem;color:#ddd;padding:4px;transition:color 0.2s;line-height:1;}
+.del-btn:hover{color:var(--red);}
+@keyframes popIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:0.9rem;background:var(--card);border:1.5px dashed var(--border);border-radius:16px;margin-bottom:20px;}
+.empty-emoji{font-size:2.5rem;margin-bottom:10px;}
+
+/* EMOJI PICKER */
+.emoji-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.emoji-opt{width:36px;height:36px;border:1.5px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:border-color 0.15s,background 0.15s;}
+.emoji-opt:hover{border-color:var(--orange);}
+.emoji-opt.active{border-color:var(--orange);background:rgba(232,98,42,0.1);}
+
+/* BACK BTN */
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:0.82rem;font-weight:700;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;margin-bottom:20px;transition:color 0.2s;}
+.back-btn:hover{color:var(--orange);}
+
+/* ERROR */
+.error-box{background:var(--red-light);border:1.5px solid #f5c0bb;border-radius:12px;padding:14px 18px;color:var(--red);font-size:0.85rem;margin-bottom:16px;display:none;}
+
+/* SPINNER */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:12px 24px;border-radius:50px;font-size:0.85rem;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:999;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);white-space:nowrap;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <div class="banner-inner">
+    <div class="banner-emoji">🍽️</div>
+    <h1>Potluck Planner</h1>
+    <p>Coordinate who's bringing what — no sign-in needed</p>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- HOME VIEW -->
+  <div id="homeView" class="view active" style="padding-top:36px">
+    <div class="card">
+      <div class="card-title">Host a new potluck 🎉</div>
+      <div class="card-sub">Create a sign-up sheet, then share the link with your guests.</div>
+      <div id="homeError" class="error-box"></div>
+      <div class="field">
+        <label>Event name</label>
+        <input type="text" id="newName" placeholder="e.g. Thanksgiving Dinner 2025" maxlength="80"/>
+      </div>
+      <div class="field">
+        <label>Description (optional)</label>
+        <textarea id="newDesc" placeholder="Theme, dietary notes, date & time…"></textarea>
+      </div>
+      <button class="btn btn-primary" id="createBtn" onclick="createEvent()">✨ Create sign-up sheet</button>
+
+      <div class="share-box" id="shareBoxHome" style="display:none">
+        <div class="share-label">📎 Share this link with your guests</div>
+        <div class="share-row">
+          <div class="share-url" id="shareUrlHome"></div>
+          <button class="btn btn-green btn-sm" onclick="copyLink('shareUrlHome')">Copy</button>
+        </div>
+        <div style="margin-top:14px;">
+          <button class="btn btn-primary btn-sm" id="openEventBtn" onclick="openCreatedEvent()">Open sign-up sheet →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVENT VIEW -->
+  <div id="eventView" class="view" style="padding-top:36px">
+    <button class="back-btn" onclick="goHome()">← Create a new event</button>
+
+    <div class="card">
+      <div class="event-title-row">
+        <div>
+          <div class="event-title" id="evTitle"></div>
+          <div class="event-desc" id="evDesc"></div>
+        </div>
+        <span class="badge" id="evCount">0 items</span>
+      </div>
+      <div class="share-box">
+        <div class="share-label">📎 Share this link with your guests</div>
+        <div class="share-row">
+          <div class="share-url" id="shareUrlEvent"></div>
+          <button class="btn btn-green btn-sm" onclick="copyLink('shareUrlEvent')">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">🥘 What's on the table</div>
+    <div id="itemsContainer"></div>
+
+    <div class="card">
+      <div class="card-title" style="font-size:1.15rem;margin-bottom:4px;">Add your dish 🙋</div>
+      <div class="card-sub">Fill in your name and what you're bringing.</div>
+      <div id="addError" class="error-box"></div>
+      <div class="row-2">
+        <div class="field">
+          <label>Your name</label>
+          <input type="text" id="addWho" placeholder="e.g. Jamie" maxlength="40"/>
+        </div>
+        <div class="field">
+          <label>Dish name</label>
+          <input type="text" id="addItem" placeholder="e.g. Mac & Cheese" maxlength="60"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Pick an emoji</label>
+        <div class="emoji-picker" id="emojiPicker"></div>
+      </div>
+      <div class="field">
+        <label>Notes (optional)</label>
+        <input type="text" id="addNote" placeholder="e.g. gluten-free, serves 8" maxlength="100"/>
+      </div>
+      <button class="btn btn-primary" id="addBtn" onclick="addItem()">🍴 Add to the list</button>
+    </div>
+  </div>
+
+  <!-- NOT FOUND VIEW -->
+  <div id="notFoundView" class="view" style="padding-top:60px;text-align:center;">
+    <div style="font-size:3rem;margin-bottom:16px;">🤔</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;margin-bottom:8px;">Event not found</div>
+    <div style="color:var(--muted);margin-bottom:24px;">This link may be invalid or the event was removed.</div>
+    <button class="btn btn-primary" onclick="goHome()">Create a new event</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const EMOJIS = ['🥗','🍕','🥧','🍝','🥘','🍲','🥩','🍗','🥚','🧀','🥖','🥨','🍰','🎂','🥮','🍩','🍪','🥜','🫙','🍷'];
+let selectedEmoji = EMOJIS[0];
+let currentEventId = null;
+let createdEventId = null;
+
+// ── INIT ──
+window.addEventListener('load', () => {
+  buildEmojiPicker();
+  const path = location.pathname;
+  const m = path.match(/^\/event\/([a-f0-9]+)$/);
+  if (m) {
+    loadEvent(m[1]);
+  } else {
+    showView('homeView');
+  }
+});
+
+// ── VIEWS ──
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goHome() {
+  history.pushState(null, '', '/');
+  currentEventId = null;
+  createdEventId = null;
+  document.getElementById('shareBoxHome').style.display = 'none';
+  document.getElementById('newName').value = '';
+  document.getElementById('newDesc').value = '';
+  showView('homeView');
+}
+
+// ── CREATE EVENT ──
+async function createEvent() {
+  const name = document.getElementById('newName').value.trim();
+  if (!name) { showError('homeError', 'Please give your event a name 🥺'); return; }
+  const desc = document.getElementById('newDesc').value.trim();
+  const btn = document.getElementById('createBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Creating…';
+  hideError('homeError');
+  try {
+    const res = await fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description: desc })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to create event');
+    createdEventId = data.id;
+    const url = `${location.origin}/event/${data.id}`;
+    document.getElementById('shareUrlHome').textContent = url;
+    document.getElementById('shareBoxHome').style.display = '';
+    toast('✅ Sign-up sheet created! Share the link below.');
+  } catch(e) {
+    showError('homeError', e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✨ Create sign-up sheet';
+  }
+}
+
+function openCreatedEvent() {
+  if (!createdEventId) return;
+  history.pushState(null, '', `/event/${createdEventId}`);
+  loadEvent(createdEventId);
+}
+
+// ── LOAD EVENT ──
+async function loadEvent(id) {
+  currentEventId = id;
+  try {
+    const res = await fetch(`/api/events/${id}`);
+    if (res.status === 404) { showView('notFoundView'); return; }
+    const ev = await res.json();
+    renderEventHeader(ev);
+    renderItems(ev.items);
+    showView('eventView');
+    window.scrollTo({ top: 0 });
+  } catch(e) {
+    showView('notFoundView');
+  }
+}
+
+// ── RENDER ──
+function renderEventHeader(ev) {
+  document.getElementById('evTitle').textContent = ev.name;
+  document.getElementById('evDesc').textContent = ev.description || '';
+  document.getElementById('evCount').textContent = ev.items.length + ' item' + (ev.items.length !== 1 ? 's' : '');
+  document.getElementById('shareUrlEvent').textContent = `${location.origin}/event/${ev.id}`;
+}
+
+function renderItems(items) {
+  const container = document.getElementById('itemsContainer');
+  document.getElementById('evCount').textContent = items.length + ' item' + (items.length !== 1 ? 's' : '');
+  if (!items.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-emoji">🍽️</div><div>No dishes yet — be the first to add one!</div></div>`;
+    return;
+  }
+  const grid = document.createElement('div');
+  grid.className = 'items-grid';
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    card.dataset.id = item.id;
+    card.innerHTML = `
+      <button class="del-btn" onclick="removeItem(${item.id}, this)" title="Remove">✕</button>
+      <div class="item-emoji">${item.emoji}</div>
+      <div class="item-name">${esc(item.dish_name)}</div>
+      <div class="item-who">brought by <strong>${esc(item.person_name)}</strong></div>
+      ${item.note ? `<div class="item-note">${esc(item.note)}</div>` : ''}
+    `;
+    grid.appendChild(card);
+  });
+  container.innerHTML = '';
+  container.appendChild(grid);
+}
+
+// ── ADD ITEM ──
+async function addItem() {
+  const who = document.getElementById('addWho').value.trim();
+  const name = document.getElementById('addItem').value.trim();
+  const note = document.getElementById('addNote').value.trim();
+  if (!who) { showError('addError', "What's your name? 👋"); return; }
+  if (!name) { showError('addError', "What dish are you bringing? 🍽️"); return; }
+  hideError('addError');
+  const btn = document.getElementById('addBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Adding…';
+  try {
+    const res = await fetch(`/api/events/${currentEventId}/items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ person_name: who, dish_name: name, emoji: selectedEmoji, note })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to add item');
+    document.getElementById('addWho').value = '';
+    document.getElementById('addItem').value = '';
+    document.getElementById('addNote').value = '';
+    // Refresh items from server
+    const evRes = await fetch(`/api/events/${currentEventId}`);
+    const ev = await evRes.json();
+    renderItems(ev.items);
+    toast('🎉 ' + name + ' added to the list!');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch(e) {
+    showError('addError', e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🍴 Add to the list';
+  }
+}
+
+// ── REMOVE ITEM ──
+async function removeItem(itemId, btn) {
+  if (!confirm('Remove this dish from the list?')) return;
+  btn.disabled = true;
+  try {
+    const res = await fetch(`/api/items/${itemId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to remove item');
+    const evRes = await fetch(`/api/events/${currentEventId}`);
+    const ev = await evRes.json();
+    renderItems(ev.items);
+    toast('Dish removed');
+  } catch(e) {
+    toast('Could not remove dish — try again');
+    btn.disabled = false;
+  }
+}
+
+// ── COPY LINK ──
+function copyLink(elId) {
+  const url = document.getElementById(elId).textContent;
+  navigator.clipboard.writeText(url)
+    .then(() => toast('📋 Link copied to clipboard!'))
+    .catch(() => toast('Select the link above and copy manually'));
+}
+
+// ── EMOJI PICKER ──
+function buildEmojiPicker() {
+  const el = document.getElementById('emojiPicker');
+  EMOJIS.forEach((e, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'emoji-opt' + (i === 0 ? ' active' : '');
+    btn.textContent = e;
+    btn.type = 'button';
+    btn.onclick = () => {
+      selectedEmoji = e;
+      document.querySelectorAll('.emoji-opt').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+    el.appendChild(btn);
+  });
+}
+
+// ── HELPERS ──
+function esc(s) {
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(s || ''));
+  return d.innerHTML;
+}
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideError(id) {
+  document.getElementById(id).style.display = 'none';
+}
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// Enter key shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id === 'newName') createEvent();
+  if (e.key === 'Enter' && ['addWho','addItem','addNote'].includes(e.target.id)) addItem();
+});
+</script>
+</body>
+</html>
